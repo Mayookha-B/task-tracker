@@ -1,6 +1,5 @@
 import sqlite3
-from flask import Flask, request, jsonify
-
+from flask import Flask, request, jsonify, render_template
 class Task:
     def __init__(self, task_id, title, done=False):
         self.task_id = task_id
@@ -25,7 +24,7 @@ next_id = 1
 
 @app.route("/")
 def home():
-    return "Task Tracker is running!"
+    return render_template("index.html")
 # to add a task(create a  task)
 @app.route("/tasks", methods=["POST"])
 def add_task():
