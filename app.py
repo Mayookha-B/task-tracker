@@ -30,6 +30,8 @@ def home():
 @app.route("/tasks", methods=["POST"])
 def add_task():
     data = request.get_json()
+    if not data or "title" not in data or not data["title"].strip():
+        return jsonify({"error": "Title is required"}), 400
     conn = sqlite3.connect("tasks.db")
     conn.execute("INSERT INTO tasks (title, done) VALUES (?, 0)", (data["title"],))
     conn.commit()
@@ -59,9 +61,11 @@ def update_task(task_id):
 @app.route("/tasks/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id):
     conn = sqlite3.connect("tasks.db")
-    conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    cursor = conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
     conn.commit()
     conn.close()
+    if cursor.rowcount == 0:
+        return jsonify({"error": "Task not found"}), 404
     return jsonify({"message": "Task deleted"})
 if __name__ == "__main__":
     app.run(debug=True)
