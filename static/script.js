@@ -1,52 +1,61 @@
-function loadTasks() {
-    fetch("/tasks")
-        .then(response => response.json())
-        .then(tasks => {
-            const list = document.getElementById("taskList");
-            list.innerHTML = "";
-            tasks.forEach(task => {
-                const li = document.createElement("li");
-                li.textContent = task.title + " ";
-                if (task.done) {
-                    li.classList.add("done-task");
-                }   
+const taskList = document.getElementById("taskList");
+const titleInput = document.getElementById("titleInput");
+const addBtn = document.getElementById("addBtn");
 
-                const doneBtn = document.createElement("button");
-                doneBtn.textContent = "Mark Done";
-                doneBtn.addEventListener("click", function() {
-                    fetch("/tasks/" + task.id, { method: "PUT" })
-                        .then(() => loadTasks());
-                });
+async function loadTasks() {
+    const res = await fetch("/tasks");
+    const tasks = await res.json();
+    taskList.innerHTML = "";
+    tasks.forEach(task => {
+        const li = document.createElement("li");
 
-                const deleteBtn = document.createElement("button");
-                deleteBtn.textContent = "Delete";
-                deleteBtn.addEventListener("click", function() {
-                    fetch("/tasks/" + task.id, { method: "DELETE" })
-                        .then(() => loadTasks());
-                });
+        const span = document.createElement("span");
+        span.textContent = task.title;
+        if (task.done) {
+            span.classList.add("done");
+        }
 
-                li.appendChild(doneBtn);
-                li.appendChild(deleteBtn);
-                list.appendChild(li);
-            });
-        });
+        const buttonsDiv = document.createElement("div");
+        buttonsDiv.classList.add("task-buttons");
+
+        const doneBtn = document.createElement("button");
+        doneBtn.textContent = "Done";
+        doneBtn.onclick = () => markDone(task.id);
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Delete";
+        deleteBtn.onclick = () => deleteTask(task.id);
+
+        buttonsDiv.appendChild(doneBtn);
+        buttonsDiv.appendChild(deleteBtn);
+
+        li.appendChild(span);
+        li.appendChild(buttonsDiv);
+        taskList.appendChild(li);
+    });
 }
 
-loadTasks();
-
-document.getElementById("addBtn").addEventListener("click", function() {
-    const input = document.getElementById("titleInput");
-    const title = input.value.trim();
+async function addTask() {
+    const title = titleInput.value.trim();
     if (!title) return;
-
-    fetch("/tasks", {
+    await fetch("/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title })
-    })
-    .then(response => response.json())
-    .then(() => {
-        input.value = "";
-        loadTasks();
+        body: JSON.stringify({ title })
     });
-});
+    titleInput.value = "";
+    loadTasks();
+}
+
+async function markDone(id) {
+    await fetch(`/tasks/${id}`, { method: "PUT" });
+    loadTasks();
+}
+
+async function deleteTask(id) {
+    await fetch(`/tasks/${id}`, { method: "DELETE" });
+    loadTasks();
+}
+
+addBtn.addEventListener("click", addTask);
+loadTasks();
